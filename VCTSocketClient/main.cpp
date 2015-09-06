@@ -9,7 +9,7 @@
 #include <iostream>
 #include "VCTSocketThread.h"
 #include "VCTPackage.h"
-
+#include <unistd.h>
 using namespace VCT;
 
 struct TEST
@@ -21,22 +21,29 @@ struct TEST
 class MainUI : public SocketThread::Delegate {
 public:
     MainUI() {
-        SocketThread st(this);
-        st.openWithIp("127.0.0.1", 8887);
-        
-        if (st.isConnected()) {
-            TEST t;
-            strcpy(t.username, "vincent");
-            t.userid = 102;
-            
-            Package package(1,2,3,&t,sizeof(t));
-            st.sendPackage(&package);
-        }
-        
+        printf("enter some command and have fun :)\n");
     }
+    
+    ~MainUI() {
+        _thread->destory();
+        _thread = nullptr;
+    }
+    
+    void connect() {
+        _thread = SocketThread::create(this);
+        _thread->openWithIp("127.0.0.1", 8887);
+    }
+    
+    void close() {
+        _thread->close();
+    }
+    
 private:
+    SocketThread *_thread;
+    
     virtual void onConnected() override {
         printf("onConnected\n");
+        
     }
     
     virtual void onDisConnected() override {
@@ -52,7 +59,16 @@ int main(int argc, const char * argv[]) {
     
     MainUI mainUI;
     while (true) {
-        ;
+        char input[128];
+        scanf("%s",input);
+        if (strcmp(input, "connect") == 0) {
+            mainUI.connect();
+            continue;
+        }
+        if (strcmp(input, "close") == 0) {
+            mainUI.close();
+            continue;
+        }
     }
     return 0;
 }

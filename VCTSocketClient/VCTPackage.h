@@ -17,11 +17,15 @@ namespace VCT {
     class Package {
     public:
         
-        Package();
+        enum TYPE{
+            SEND,
+            RECV,
+            ERROR
+        };
         
-        Package(const PACKAGE_HEAD *head,const void* body,int bodySize);
+        Package(TYPE type,const char* buffer,int size);
         
-        Package(UINT firstID,UINT secondID,UINT thirdID,const void *body,int bodySize);
+        Package(TYPE type,UINT firstID,UINT secondID,UINT thirdID,const void *body,int bodySize);
         
         ~Package();
         
@@ -30,7 +34,7 @@ namespace VCT {
         }
         
         inline PACKAGE_HEAD* getHead() {
-            return &_head;
+            return (PACKAGE_HEAD *)_package;
         }
         
         inline const void* getBody() {
@@ -38,16 +42,15 @@ namespace VCT {
         }
         
         inline int getSize() {
-            return _head.size;
+            return getHead()->size;
         }
         
-        void encode(const PACKAGE_HEAD *head,const void* body,int bodySize);
-
-        void encode(UINT firstID,UINT secondID,UINT thirdID,const void *body,int bodySize);
+        inline TYPE getType() {
+            return _type;
+        }
         
     private:
-        
-        PACKAGE_HEAD _head;
+        TYPE _type;
         char _package[RECV_SIZE];
     };
 }

@@ -11,6 +11,7 @@
 
 #include <string>
 #include "VCTBaseTypeDef.h"
+#include <sys/select.h>
 
 namespace VCT {
     
@@ -38,10 +39,13 @@ namespace VCT {
         // recv data
         int recv(char* buffer, int size);
         
-    private:
-        
+        // close socket
         void close();
         
+        int select(timeval* timeout);
+        
+    private:
+
         int _sockfd;
         
         char _ip[16];

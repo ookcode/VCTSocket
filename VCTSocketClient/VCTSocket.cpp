@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/select.h>
+
 
 namespace VCT {
     Socket::Socket(const char* ip,int port) {
@@ -104,7 +104,7 @@ namespace VCT {
                     break;
                 }
                 if (error != 0) {
-                    //network error, error == 0 represent connect successfully
+                    //network error, if error == 0 represent connect successfully
                     break;
                 }
             }else {
@@ -133,7 +133,6 @@ namespace VCT {
             sentsize = (int)::send(_sockfd,buffer + total, size - total,0);
             if (sentsize == -1) {
                 perror("error send to socket");
-                close();
                 return -1;
             }
             total += sentsize;
@@ -144,16 +143,41 @@ namespace VCT {
     
     int Socket::recv(char *buffer, int size) {
         int recvsize = (int)::recv(_sockfd, buffer, size, 0);
-        if (recvsize == -1) {
-            perror("error recv from socket");
-        }else if (recvsize == 0) {
-            printf("server close this socket\n");
+        
+        switch (recvsize) {
+            case -1:
+                perror("error recv from socket");
+                break;
+            case 0:
+                printf("server close this socket\n");
+                break;
+            default:
+                printf("socket recv %d bytes successfully\n",recvsize);
+                break;
         }
-        printf("socket recv %d bytes successfully\n",recvsize);
+        
         return recvsize;
     }
     
+    int Socket::select(timeval* timeOut) {
+        fd_set readfd;
+        FD_ZERO(&readfd);
+        FD_SET(_sockfd, &readfd);
+        
+        int nready = ::select(_sockfd + 1, &readfd, nullptr, nullptr, timeOut);
+        
+        if (nready < 0) {
+            
+        } else if (nready == 0) {
+            // time out
+        } else {
+            
+        }
+        return nready;
+    }
+    
     void Socket::close() {
+        printf("socket closed\n");
         ::close(_sockfd);
     }
 }
