@@ -17,12 +17,17 @@ namespace VCT {
     }
     
     void SocketLogic::openWithIp(const char* ip,int port) {
+        if (_thread) {
+            _thread->destory();
+            _thread = nullptr;
+        }
         _thread = SocketThread::create(this);
         _thread->openWithIp(ip, port);
     }
     
     void SocketLogic::close() {
-        _thread->close();
+        _thread->destory();
+        _thread = nullptr;
     }
     
     void SocketLogic::onConnected() {

@@ -112,7 +112,7 @@ namespace VCT {
                 break;
             }
 
-            printf("socket connect successfully\n");
+            //printf("socket connect successfully\n");
             status = CONNECT_SUCCESS;
             
         } while (0);
@@ -137,7 +137,7 @@ namespace VCT {
             }
             total += sentsize;
         }
-        printf("socket send %d bytes successfully\n",total);
+        //printf("socket send %d bytes successfully\n",total);
         return total;
     }
     
@@ -149,10 +149,10 @@ namespace VCT {
                 perror("error recv from socket");
                 break;
             case 0:
-                printf("server close this socket\n");
+                //printf("server close this socket\n");
                 break;
             default:
-                printf("socket recv %d bytes successfully\n",recvsize);
+                //printf("socket recv %d bytes successfully\n",recvsize);
                 break;
         }
         
@@ -177,7 +177,7 @@ namespace VCT {
     }
     
     void Socket::close() {
-        printf("socket closed\n");
+        //printf("socket closed\n");
         ::close(_sockfd);
     }
 }

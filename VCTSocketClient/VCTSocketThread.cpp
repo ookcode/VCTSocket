@@ -30,7 +30,8 @@ namespace VCT {
     
     SocketThread::~SocketThread() {
         close();
-        if (_dispatchThread->joinable()) {
+        //死也要把包发完
+        if (_dispatchThread && _dispatchThread->joinable()) {
             _dispatchThread->join();
         }
         DELETE(_dispatchThread);
@@ -59,7 +60,8 @@ namespace VCT {
         int n = _socket->connect();
         if (n != Socket::CONNECT_SUCCESS) {
             //连接失败
-            _delegate->onDisConnected();//memory leak
+            Package* pack = new NET_ERROR_PACKAGE;
+            addToDispatchThread(pack);
             return;
         }
         _delegate->onConnected();
@@ -120,6 +122,7 @@ namespace VCT {
                     case ass_net_timeout:
                     case ass_server_close:
                         close();
+                        _delegate->onDisConnected();
                         break;
                     default:
                         _delegate->recvPackage(pack);
@@ -127,8 +130,10 @@ namespace VCT {
                 }
                 _packageDeque.pop_front();
                 DELETE(pack);
+                usleep(10e+5);//equals 0.1 second
+            }else if(nullptr == _socket) {
+                break;
             }
-            usleep(10e+5);//equals 0.1 second
         }
     }
     
@@ -191,26 +196,18 @@ namespace VCT {
     }
     
     void SocketThread::close() {
-        
-        if (!_connected) {
-            printf("error exec close, already closed\n");
-            return;
-        }
         _connected = false;
-        if (_heartbeatThread->joinable()) {
+        if (_heartbeatThread && _heartbeatThread->joinable()) {
             _heartbeatThread->join();
         }
         
-        if (_recvThread->joinable()) {
+        if (_recvThread && _recvThread->joinable()) {
             _recvThread->join();
         }
-        printf("delete\n");
-        _socket->close();
+        if(_socket) _socket->close();
         DELETE(_heartbeatThread);
         DELETE(_recvThread);
         DELETE(_socket);
-        _delegate->onDisConnected();
-        
     }
     
 }
