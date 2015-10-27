@@ -9,6 +9,8 @@
 #ifndef VCTSocketClient_VCTBaseTypeDef_h
 #define VCTSocketClient_VCTBaseTypeDef_h
 
+#define RECV_SIZE 4096
+
 #define DELETE(p)           do { delete (p); (p) = nullptr; } while(0)
 
 typedef long long               LLONG;

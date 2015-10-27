@@ -10,19 +10,16 @@
 
 namespace VCT {
 
-    Package::Package(TYPE type,const char* buffer,int size) {
-        _type = type;
+    Package::Package(const char* buffer,int size) {
         memcpy(_package, buffer, size);
     }
     
-    Package::Package(TYPE type,UINT firstID, UINT secondID, UINT thirdID, const void *body, int bodySize) {
-        
-        _type = type;
+    Package::Package(UINT mainID, UINT assID, UINT handleID, const void *body, int bodySize) {
         
         PACKAGE_HEAD head;
-        head.firstID = firstID;
-        head.secondID = secondID;
-        head.thirdID = thirdID;
+        head.mainID = mainID;
+        head.assID = assID;
+        head.handleID = handleID;
         head.size = bodySize + PACKAGE_HEAD_SIZE;
         
         memcpy(_package, &head, PACKAGE_HEAD_SIZE);

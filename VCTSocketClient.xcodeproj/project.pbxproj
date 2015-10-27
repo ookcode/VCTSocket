@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF8AE3E61BDF664700362E86 /* VCTSocketLogic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF8AE3E41BDF664700362E86 /* VCTSocketLogic.cpp */; };
 		BFA2DA671B907FF200BC56A0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA2DA661B907FF200BC56A0 /* main.cpp */; };
 		BFA2DA821B90803E00BC56A0 /* VCTSocket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA2DA801B90803E00BC56A0 /* VCTSocket.cpp */; };
 		BFA746E11B95CB1500DC7B68 /* VCTSocketThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA746DF1B95CB1500DC7B68 /* VCTSocketThread.cpp */; };
@@ -26,6 +27,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BF8AE3E41BDF664700362E86 /* VCTSocketLogic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VCTSocketLogic.cpp; sourceTree = "<group>"; };
+		BF8AE3E51BDF664700362E86 /* VCTSocketLogic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VCTSocketLogic.h; sourceTree = "<group>"; };
 		BFA2DA631B907FF200BC56A0 /* VCTSocketClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = VCTSocketClient; sourceTree = BUILT_PRODUCTS_DIR; };
 		BFA2DA661B907FF200BC56A0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		BFA2DA801B90803E00BC56A0 /* VCTSocket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VCTSocket.cpp; sourceTree = "<group>"; };
@@ -73,10 +76,12 @@
 				BFA2DA811B90803E00BC56A0 /* VCTSocket.h */,
 				BFA746DF1B95CB1500DC7B68 /* VCTSocketThread.cpp */,
 				BFA746E01B95CB1500DC7B68 /* VCTSocketThread.h */,
+				BF8AE3E41BDF664700362E86 /* VCTSocketLogic.cpp */,
+				BF8AE3E51BDF664700362E86 /* VCTSocketLogic.h */,
 				BFA746E21B95CB9000DC7B68 /* VCTPackage.cpp */,
 				BFA746E31B95CB9000DC7B68 /* VCTPackage.h */,
-				BFA746E51B95CBFF00DC7B68 /* VCTBasePackageDef.h */,
 				BFA746E61B95CC3000DC7B68 /* VCTBaseTypeDef.h */,
+				BFA746E51B95CBFF00DC7B68 /* VCTBasePackageDef.h */,
 			);
 			path = VCTSocketClient;
 			sourceTree = "<group>";
@@ -139,6 +144,7 @@
 			files = (
 				BFA746E41B95CB9000DC7B68 /* VCTPackage.cpp in Sources */,
 				BFA746E11B95CB1500DC7B68 /* VCTSocketThread.cpp in Sources */,
+				BF8AE3E61BDF664700362E86 /* VCTSocketLogic.cpp in Sources */,
 				BFA2DA821B90803E00BC56A0 /* VCTSocket.cpp in Sources */,
 				BFA2DA671B907FF200BC56A0 /* main.cpp in Sources */,
 			);
@@ -229,7 +235,7 @@
 			buildSettings = {
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.10;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -238,7 +244,7 @@
 			buildSettings = {
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.10;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};

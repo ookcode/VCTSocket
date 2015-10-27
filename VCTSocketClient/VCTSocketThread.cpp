@@ -8,7 +8,6 @@
 
 #include "VCTSocketThread.h"
 #include "VCTSocket.h"
-#include "VCTPackage.h"
 #include <unistd.h>
 
 namespace VCT {
@@ -46,7 +45,9 @@ namespace VCT {
     void SocketThread::openWithIp(const char* ip, int port) {
         if (!_connected) {
             _socket = new Socket(ip,port);
+            //启动socket接收线程
             _recvThread = new std::thread(std::bind(&SocketThread::onRecvThread, this));
+            //启动包的分发线程
             _dispatchThread = new std::thread(std::bind(&SocketThread::onDispatchThread,this));
         }else {
             printf("error exec openWithIp, already connected\n");
@@ -54,17 +55,17 @@ namespace VCT {
     }
     
     void SocketThread::onRecvThread() {
+        //连接socket
         int n = _socket->connect();
         if (n != Socket::CONNECT_SUCCESS) {
-            //connect fail
+            //连接失败
             _delegate->onDisConnected();//memory leak
             return;
         }
-        //connect successfully
         _delegate->onConnected();
         _connected = true;
         
-        //send heartbeat package
+        //启动心跳包发送线程
         _heartbeatThread = new std::thread(std::bind(&SocketThread::onHeartBeatThread, this));
         
         char buffer[RECV_SIZE];
@@ -74,29 +75,31 @@ namespace VCT {
         timeOut.tv_usec = 16000;
         
         while (_connected) {
-
+            //监听消息
             int nready = _socket->select(&timeOut);
             
             if (0 == nready) {
-                // time out
+                //select = 0：等待超时，没有可读写或错误的文件
                 continue;
             }
             
             if (nready < 0) {
-                // network error
-                printf("select error\n");
+                //select = 负值：select错误
+                Package* pack = new NET_ERROR_PACKAGE;
+                addToDispatchThread(pack);
                 break;
             }
+            //slect = 正值：某些文件可读写
             int recvSize = _socket->recv(buffer, RECV_SIZE);
             if (recvSize == -1) {
-                //network error
-                Package* pack = new Package(Package::ERROR, 0, 0, 0, nullptr, 0);
+                //网络错误
+                Package* pack = new NET_ERROR_PACKAGE;
                 addToDispatchThread(pack);
                 break;
             }
             if (recvSize == 0) {
-                //server close
-                Package* pack = new Package(Package::ERROR, 0, 0, 0, nullptr, 0);
+                //服务端关闭socket连接
+                Package* pack = new SERVER_CLOSE_PACKAGE;
                 addToDispatchThread(pack);
                 break;
             }
@@ -107,37 +110,39 @@ namespace VCT {
     
     void SocketThread::onDispatchThread() {
         
-        Package *package = nullptr;
+        Package *pack = nullptr;
         while (true) {
             std::lock_guard < std::mutex > autoLock(_packageDequeLock);
             if (!_packageDeque.empty()) {
-                package = _packageDeque.front();
-                if (package->getType() == Package::ERROR) {
-                    //close thread
-                    close();
-                }else {
-                    //dispatch to main thread
-                    _delegate->recvPackage(package);
+                pack = _packageDeque.front();
+                switch (pack->getAssID()) {
+                    case ass_net_error:
+                    case ass_net_timeout:
+                    case ass_server_close:
+                        close();
+                        break;
+                    default:
+                        _delegate->recvPackage(pack);
+                        break;
                 }
                 _packageDeque.pop_front();
-                DELETE(package);
+                DELETE(pack);
             }
             usleep(10e+5);//equals 0.1 second
         }
     }
     
     void SocketThread::onHeartBeatThread() {
-        Package *heartbeat = new Package(Package::SEND,0, 0, 0, nullptr, 0);
+        Package *heartbeat = new HEART_BEAT_PACKAGE;
         while (true) {
             sleep(1);
             if (!_connected) break;
-            sendPackage(heartbeat);
+            sendPackage(heartbeat);//发送心跳包
             std::lock_guard <std::mutex> lock(_heartBeatLock);
             _heartBeatDiff++;
-            //printf("heartBeatDiff %d\n",_heartBeatDiff);
             if (_heartBeatDiff >= 3) {
-                //add to dispatch deque
-                Package* pack = new Package(Package::ERROR, 0, 0, 0, nullptr, 0);
+                //如果心跳包差值超过一定值，发送断线消息
+                Package* pack = new NET_TIMEOUT_PACKAGE;
                 addToDispatchThread(pack);
                 break;
             }
@@ -146,25 +151,24 @@ namespace VCT {
     }
     
     void SocketThread::onRead(char *buffer, int size) {
-        //package split and combine
+        //分包与合包
         _cache.insert(_cache.end(), buffer,buffer + size);
         
-        //at least contain one package
+        //凑齐至少一个包头再处理
         while (_cache.size() >= PACKAGE_HEAD_SIZE) {
             
-            //get package head
+            //取出包头
             PACKAGE_HEAD *head = (PACKAGE_HEAD *)_cache.data();
 
-            //check package
             if (_cache.size() >= head->size) {
-                if (head->size == PACKAGE_HEAD_SIZE) {
-                    //heartbeat package
+                if (head->assID == ass_heart_beat) {
+                    //收到一个心跳包
                     std::lock_guard <std::mutex> lock(_heartBeatLock);
                     _heartBeatDiff--;
                 }else{
-                    //get one package
-                    Package *pack = new Package(Package::RECV, _cache.data(), head->size);
-                    //add to dispatch deque
+                    //取出一个包
+                    Package *pack = new Package(_cache.data(), head->size);
+                    //添加到分发队列
                     addToDispatchThread(pack);
                     
                 }
@@ -176,7 +180,7 @@ namespace VCT {
     void SocketThread::sendPackage(Package *package) {
         int ret = _socket->send(package->getPackage(), package->getSize());
         if (ret == -1) {
-            Package *pack = new Package(Package::ERROR,0,0,0,nullptr,0);
+            Package *pack = new NET_ERROR_PACKAGE;
             addToDispatchThread(pack);
         }
     }

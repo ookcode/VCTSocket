@@ -15,6 +15,7 @@
 #include <functional>
 #include <mutex>
 #include <stdlib.h>
+#include "VCTPackage.h"
 
 namespace VCT {
     class Socket;
@@ -28,18 +29,31 @@ namespace VCT {
             virtual void recvPackage(Package *package) = 0;
         };
         
-        
+        //创建一个socket的工厂方法
         static SocketThread* create(Delegate *delegate);
+        
+        //销毁工厂
         void destory();
+        
         ~SocketThread();
+        
+        //连接指定IP
         void openWithIp(const char* ip,int port);
+        
+        //发包
         void sendPackage(Package *package);
+        
+        //关闭socket连接
         void close();
+        
+        //判断是否已连接
         inline bool isConnected() {
             return _connected;
         }
         
     private:
+        
+        //屏蔽delete重载，请使用destory()销毁
         inline void operator delete(void *p)
         {
             free(p);
