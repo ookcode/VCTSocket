@@ -24,8 +24,6 @@ namespace VCT {
     public:
         class Delegate {
         public:
-            virtual void onConnected() = 0;
-            virtual void onDisConnected() = 0;
             virtual void recvPackage(Package *package) = 0;
         };
         

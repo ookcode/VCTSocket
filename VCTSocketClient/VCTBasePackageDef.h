@@ -13,18 +13,20 @@
 
 namespace VCT {
     
-#define BASE_PACKAGE_MAINID 0
+#define MAIN_NET_BASE 0
     
-#define NET_ERROR_PACKAGE           Package(BASE_PACKAGE_MAINID, ass_net_error, 0, nullptr, 0)
-#define NET_TIMEOUT_PACKAGE         Package(BASE_PACKAGE_MAINID, ass_net_timeout, 0, nullptr, 0)
-#define HEART_BEAT_PACKAGE          Package(BASE_PACKAGE_MAINID, ass_heart_beat, 0, nullptr, 0)
-#define SERVER_CLOSE_PACKAGE        Package(BASE_PACKAGE_MAINID, ass_server_close, 0, nullptr, 0)
+#define NET_ERROR_PACKAGE           Package(MAIN_NET_BASE, ass_net_error, 0, nullptr, 0)
+#define NET_TIMEOUT_PACKAGE         Package(MAIN_NET_BASE, ass_net_timeout, 0, nullptr, 0)
+#define HEART_BEAT_PACKAGE          Package(MAIN_NET_BASE, ass_heart_beat, 0, nullptr, 0)
+#define SERVER_CLOSE_PACKAGE        Package(MAIN_NET_BASE, ass_server_close, 0, nullptr, 0)
+#define CONNECT_SUCCESS_PACKAGE     Package(MAIN_NET_BASE, ass_connect_success, 0, nullptr, 0)
     
     enum BASE_PACKAGE_ASSID {
         ass_heart_beat = 0,
         ass_net_error = 1,
         ass_net_timeout = 2,
-        ass_server_close = 3
+        ass_server_close = 3,
+        ass_connect_success = 4
     };
     
     // head package

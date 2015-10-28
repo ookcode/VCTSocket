@@ -64,7 +64,8 @@ namespace VCT {
             addToDispatchThread(pack);
             return;
         }
-        _delegate->onConnected();
+        Package *connected = new CONNECT_SUCCESS_PACKAGE;
+        addToDispatchThread(connected);
         _connected = true;
         
         //启动心跳包发送线程
@@ -76,7 +77,7 @@ namespace VCT {
         timeOut.tv_sec = 0;
         timeOut.tv_usec = 16000;
         
-        while (_connected) {
+        while (_connected) {//断开连接后退出线程
             //监听消息
             int nready = _socket->select(&timeOut);
             
@@ -117,21 +118,11 @@ namespace VCT {
             std::lock_guard < std::mutex > autoLock(_packageDequeLock);
             if (!_packageDeque.empty()) {
                 pack = _packageDeque.front();
-                switch (pack->getAssID()) {
-                    case ass_net_error:
-                    case ass_net_timeout:
-                    case ass_server_close:
-                        close();
-                        _delegate->onDisConnected();
-                        break;
-                    default:
-                        _delegate->recvPackage(pack);
-                        break;
-                }
+                _delegate->recvPackage(pack);
                 _packageDeque.pop_front();
                 DELETE(pack);
                 usleep(10e+5);//equals 0.1 second
-            }else if(nullptr == _socket) {
+            }else if(nullptr == _socket) {//无包时判断是否断开连接，退出线程
                 break;
             }
         }
@@ -139,9 +130,8 @@ namespace VCT {
     
     void SocketThread::onHeartBeatThread() {
         Package *heartbeat = new HEART_BEAT_PACKAGE;
-        while (true) {
+        while (_connected) {//断开连接后退出线程
             sleep(1);
-            if (!_connected) break;
             sendPackage(heartbeat);//发送心跳包
             std::lock_guard <std::mutex> lock(_heartBeatLock);
             _heartBeatDiff++;
@@ -166,7 +156,7 @@ namespace VCT {
             PACKAGE_HEAD *head = (PACKAGE_HEAD *)_cache.data();
 
             if (_cache.size() >= head->size) {
-                if (head->assID == ass_heart_beat) {
+                if (head->mainID == MAIN_NET_BASE && head->assID == ass_heart_beat) {
                     //收到一个心跳包
                     std::lock_guard <std::mutex> lock(_heartBeatLock);
                     _heartBeatDiff--;
