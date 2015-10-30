@@ -38,7 +38,6 @@ namespace VCT {
     };
     
     static const UINT PACKAGE_HEAD_SIZE = sizeof(PACKAGE_HEAD);
-
 }
 
 #endif

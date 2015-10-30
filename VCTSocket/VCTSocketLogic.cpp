@@ -16,39 +16,17 @@ namespace VCT {
         return instance;
     }
     
-    SocketLogic::SocketLogic() {
-        addListener(MAIN_NET_BASE, ass_server_close, SEL_LISTENER(SocketLogic::onDisConnected,this));
-        addListener(MAIN_NET_BASE, ass_net_error, SEL_LISTENER(SocketLogic::onDisConnected,this));
-        addListener(MAIN_NET_BASE, ass_net_timeout, SEL_LISTENER(SocketLogic::onDisConnected,this));
-        addListener(MAIN_NET_BASE, ass_connect_success, SEL_LISTENER(SocketLogic::onConnected,this));
-    }
-    
-    SocketLogic::~SocketLogic() {
-        removeListener(MAIN_NET_BASE, ass_server_close);
-        removeListener(MAIN_NET_BASE, ass_net_error);
-        removeListener(MAIN_NET_BASE, ass_net_timeout);
-        removeListener(MAIN_NET_BASE, ass_connect_success);
-    }
-    
     void SocketLogic::openWithIp(const char* ip,int port) {
-        if (_thread) {
-            _thread->destory();
-            _thread = nullptr;
-        }
+        DELETE(_thread);
         _thread = SocketThread::create(this);
         _thread->openWithIp(ip, port);
     }
     
     void SocketLogic::close() {
-        _thread->destory();
-        _thread = nullptr;
+        DELETE(_thread);
     }
     
-    void SocketLogic::sendPackage(UINT mainID,UINT assID,UINT handleID,void* body,int bodySize,PackageListener listener) {
-        
-        addListener(mainID, assID, listener);
-        
-        Package* package = new Package(mainID,assID,handleID,body,bodySize);
+    void SocketLogic::sendPackage(Package *package) {
         _thread->sendPackage(package);
         DELETE(package);
     }
@@ -72,24 +50,11 @@ namespace VCT {
             }
         }
     }
-/**************************************************
-*  listener
-***************************************************/
-    bool SocketLogic::onConnected(Package *package) {
-        printf("onConnected\n");
-        return true;
-    }
-    
-    bool SocketLogic::onDisConnected(Package *package) {
-        int assID = package->getAssID();
-        printf("onDisConnected errorCode = %d\n",assID);
-        return true;
-    }
     
 /**************************************************
- *  delegate
+ *  delegate,夹上宏不进行jsbinding
  ***************************************************/
-    
+#ifdef COCOS2D_JAVASCRIPT
     void SocketLogic::recvPackage(Package *package) {
         UINT mainID = package->getMainID();
         UINT assID = package->getAssID();
@@ -99,10 +64,12 @@ namespace VCT {
         auto iter = _listeners.find(std::string(ckey));
         if (iter != _listeners.end()) {
             for (auto riter = iter->second.rbegin(); riter != iter->second.rend(); ++riter) {
-                if ((*riter)(package)) {
+                PackageListener listener = *riter;
+                if (listener(package)) {
                     break;
                 }
             }
         }
     };
+#endif
 }

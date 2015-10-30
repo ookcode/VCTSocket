@@ -9,8 +9,13 @@
 #include "VCTSocketThread.h"
 #include "VCTSocket.h"
 #include <unistd.h>
+#include "cocos2d.h"
 
 namespace VCT {
+    
+#define SCHEDULE() cocos2d::Director::getInstance()->getScheduler()
+#define DispatchThreadKey "SocketThread::onDispatchThread"
+#define HeartBeatThreadKey "SocketThread::onHeartBeatThread"
     SocketThread* SocketThread::create(Delegate *delegate) {
         SocketThread *thread = new SocketThread(delegate);
         if (thread) {
@@ -20,27 +25,12 @@ namespace VCT {
         return nullptr;
     }
     
-    void SocketThread::destory() {
-        delete this;
-    }
-    
     SocketThread::SocketThread(Delegate *delegate) {
         _delegate = delegate;
     }
     
     SocketThread::~SocketThread() {
         close();
-        //死也要把包发完
-        if (_dispatchThread && _dispatchThread->joinable()) {
-            _dispatchThread->join();
-        }
-        DELETE(_dispatchThread);
-        auto iter = _packageDeque.begin();
-        while (iter != _packageDeque.end()) {
-            Package *pack = *iter;
-            DELETE(pack);
-            _packageDeque.erase(iter);
-        }
     }
     
     void SocketThread::openWithIp(const char* ip, int port) {
@@ -49,7 +39,9 @@ namespace VCT {
             //启动socket接收线程
             _recvThread = new std::thread(std::bind(&SocketThread::onRecvThread, this));
             //启动包的分发线程
-            _dispatchThread = new std::thread(std::bind(&SocketThread::onDispatchThread,this));
+            SCHEDULE()->schedule(CC_CALLBACK_1(SocketThread::onDispatchThread, this), this, 0.1f, false, DispatchThreadKey);
+            //启动心跳包线程
+            SCHEDULE()->schedule(CC_CALLBACK_1(SocketThread::onHeartBeatThread, this), this, 1.0f, false, HeartBeatThreadKey);
         }else {
             printf("error exec openWithIp, already connected\n");
         }
@@ -67,9 +59,6 @@ namespace VCT {
         Package *connected = new CONNECT_SUCCESS_PACKAGE;
         addToDispatchThread(connected);
         _connected = true;
-        
-        //启动心跳包发送线程
-        _heartbeatThread = new std::thread(std::bind(&SocketThread::onHeartBeatThread, this));
         
         char buffer[RECV_SIZE];
         
@@ -111,27 +100,20 @@ namespace VCT {
         return;
     }
     
-    void SocketThread::onDispatchThread() {
-        
+    void SocketThread::onDispatchThread(float dt) {
         Package *pack = nullptr;
-        while (true) {
-            std::lock_guard < std::mutex > autoLock(_packageDequeLock);
-            if (!_packageDeque.empty()) {
-                pack = _packageDeque.front();
-                _delegate->recvPackage(pack);
-                _packageDeque.pop_front();
-                DELETE(pack);
-                usleep(10e+5);//equals 0.1 second
-            }else if(nullptr == _socket) {//无包时判断是否断开连接，退出线程
-                break;
-            }
+        std::lock_guard < std::mutex > autoLock(_packageDequeLock);
+        if (!_packageDeque.empty()) {
+            pack = _packageDeque.front();
+            if(_delegate) _delegate->recvPackage(pack);
+            _packageDeque.pop_front();
+            DELETE(pack);
         }
     }
     
-    void SocketThread::onHeartBeatThread() {
-        Package *heartbeat = new HEART_BEAT_PACKAGE;
-        while (_connected) {//断开连接后退出线程
-            sleep(1);
+    void SocketThread::onHeartBeatThread(float dt) {
+        if (_connected) {
+            Package *heartbeat = new HEART_BEAT_PACKAGE;
             sendPackage(heartbeat);//发送心跳包
             std::lock_guard <std::mutex> lock(_heartBeatLock);
             _heartBeatDiff++;
@@ -139,10 +121,9 @@ namespace VCT {
                 //如果心跳包差值超过一定值，发送断线消息
                 Package* pack = new NET_TIMEOUT_PACKAGE;
                 addToDispatchThread(pack);
-                break;
             }
+            DELETE(heartbeat);
         }
-        DELETE(heartbeat);
     }
     
     void SocketThread::onRead(char *buffer, int size) {
@@ -187,17 +168,27 @@ namespace VCT {
     
     void SocketThread::close() {
         _connected = false;
-        if (_heartbeatThread && _heartbeatThread->joinable()) {
-            _heartbeatThread->join();
-        }
         
+        //停止recv线程
         if (_recvThread && _recvThread->joinable()) {
             _recvThread->join();
         }
-        if(_socket) _socket->close();
-        DELETE(_heartbeatThread);
         DELETE(_recvThread);
+        
+        //关闭socket连接
+        if(_socket) _socket->close();
         DELETE(_socket);
+        
+        SCHEDULE()->unschedule(DispatchThreadKey, this);
+        SCHEDULE()->unschedule(HeartBeatThreadKey, this);
+        
+        //清空消息队列
+        auto iter = _packageDeque.begin();
+        while (iter != _packageDeque.end()) {
+            Package *pack = *iter;
+            DELETE(pack);
+            _packageDeque.erase(iter);
+        }
     }
     
 }

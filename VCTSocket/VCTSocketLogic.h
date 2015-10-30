@@ -15,15 +15,16 @@
 #include <vector>
 
 namespace VCT {
+    //夹上宏不进行jsbinding
+#ifdef COCOS2D_JAVASCRIPT
     class SocketLogic : public SocketThread::Delegate {
+#else
+    class SocketLogic {
+#endif
     public:
-        #define SEL_LISTENER(__selector__,__target__, ...) std::bind(&__selector__,__target__, std::placeholders::_1, ##__VA_ARGS__)
-        
         typedef std::function<bool(Package *package)> PackageListener;
         
         static SocketLogic* getInstance();
-        
-        ~SocketLogic();
         
         //连接指定IP
         void openWithIp(const char* ip,int port);
@@ -32,7 +33,7 @@ namespace VCT {
         void close();
         
         //发送包
-        void sendPackage(UINT mainID,UINT assID,UINT handleID,void* body,int bodySize,PackageListener listener);
+        void sendPackage(Package *package);
         
         //添加观察者
         void addListener(UINT mainID,UINT assID,PackageListener listener);
@@ -40,17 +41,11 @@ namespace VCT {
         //移除观察者
         void removeListener(UINT mainID,UINT assID);
         
-    private:
-        SocketLogic();
-        
-        //delegate
+        //delegate,夹上宏不进行jsbinding
+#ifdef COCOS2D_JAVASCRIPT
     public:
         virtual void recvPackage(Package *package) override;
-        
-        //listener
-    private:
-        bool onConnected(Package *package);
-        bool onDisConnected(Package *package);
+#endif
         
     private:
         SocketThread *_thread = nullptr;

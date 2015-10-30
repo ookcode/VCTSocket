@@ -30,9 +30,7 @@ namespace VCT {
         //创建一个socket的工厂方法
         static SocketThread* create(Delegate *delegate);
         
-        //销毁工厂
-        void destory();
-        
+        //析构
         ~SocketThread();
         
         //连接指定IP
@@ -50,27 +48,26 @@ namespace VCT {
         }
         
     private:
-        
-        //屏蔽delete重载，请使用destory()销毁
-        inline void operator delete(void *p)
-        {
-            free(p);
-        }
-        
+        //构造
         SocketThread(Delegate *delegate);
         
+        //收到数据
         void onRead(char* buffer,int size);
         
+        //监听线程
         void onRecvThread();
-        void onDispatchThread();
-        void onHeartBeatThread();
         
+        //分发包线程
+        void onDispatchThread(float dt);
+        
+        //发送心跳包线程
+        void onHeartBeatThread(float dt);
+        
+        //添加到发送队列
         void addToDispatchThread(Package *pack);
         
         Socket *_socket = nullptr;
         std::thread *_recvThread = nullptr;
-        std::thread *_dispatchThread = nullptr;
-        std::thread *_heartbeatThread = nullptr;
         Delegate *_delegate = nullptr;
         
         std::vector<char> _cache;

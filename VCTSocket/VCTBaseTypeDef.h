@@ -17,8 +17,6 @@ typedef long long               LLONG;
 
 typedef unsigned long long      ULLONG;
 
-typedef int                     INT;
-
 typedef unsigned int            UINT;
 
 typedef unsigned char           BYTE;
