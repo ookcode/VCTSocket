@@ -53,8 +53,8 @@ bool js_jsb_socketLogic_SocketLogic_openWithIp(JSContext *cx, uint32_t argc, jsv
     VCT::SocketLogic* cobj = (VCT::SocketLogic *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_socketLogic_SocketLogic_openWithIp : Invalid Native Object");
     if (argc == 2) {
-        const char* arg0;
-        int arg1;
+        const char* arg0 = nullptr;
+        int arg1 = 0;
         std::string arg0_tmp; ok &= jsval_to_std_string(cx, args.get(0), &arg0_tmp); arg0 = arg0_tmp.c_str();
         ok &= jsval_to_int32(cx, args.get(1), (int32_t *)&arg1);
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_socketLogic_SocketLogic_openWithIp : Error processing arguments");
@@ -75,8 +75,8 @@ bool js_jsb_socketLogic_SocketLogic_addListener(JSContext *cx, uint32_t argc, js
     VCT::SocketLogic* cobj = (VCT::SocketLogic *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_socketLogic_SocketLogic_addListener : Invalid Native Object");
     if (argc == 3) {
-        unsigned int arg0;
-        unsigned int arg1;
+        unsigned int arg0 = 0;
+        unsigned int arg1 = 0;
         std::function<bool (VCT::Package *)> arg2;
         ok &= jsval_to_uint32(cx, args.get(0), &arg0);
         ok &= jsval_to_uint32(cx, args.get(1), &arg1);
@@ -130,7 +130,7 @@ bool js_jsb_socketLogic_SocketLogic_sendPackage(JSContext *cx, uint32_t argc, js
     VCT::SocketLogic* cobj = (VCT::SocketLogic *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_socketLogic_SocketLogic_sendPackage : Invalid Native Object");
     if (argc == 1) {
-        VCT::Package* arg0;
+        VCT::Package* arg0 = nullptr;
         do {
             if (args.get(0).isNull()) { arg0 = nullptr; break; }
             if (!args.get(0).isObject()) { ok = false; break; }
@@ -158,8 +158,8 @@ bool js_jsb_socketLogic_SocketLogic_removeListener(JSContext *cx, uint32_t argc,
     VCT::SocketLogic* cobj = (VCT::SocketLogic *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_socketLogic_SocketLogic_removeListener : Invalid Native Object");
     if (argc == 2) {
-        unsigned int arg0;
-        unsigned int arg1;
+        unsigned int arg0 = 0;
+        unsigned int arg1 = 0;
         ok &= jsval_to_uint32(cx, args.get(0), &arg0);
         ok &= jsval_to_uint32(cx, args.get(1), &arg1);
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_socketLogic_SocketLogic_removeListener : Error processing arguments");
@@ -215,13 +215,14 @@ void js_VCT_SocketLogic_finalize(JSFreeOp *fop, JSObject *obj) {
     js_proxy_t* jsproxy;
     jsproxy = jsb_get_js_proxy(obj);
     if (jsproxy) {
+        VCT::SocketLogic *nobj = static_cast<VCT::SocketLogic *>(jsproxy->ptr);
         nproxy = jsb_get_native_proxy(jsproxy->ptr);
 
-        VCT::SocketLogic *nobj = static_cast<VCT::SocketLogic *>(nproxy->ptr);
-        if (nobj)
+        if (nobj) {
+            jsb_remove_proxy(nproxy, jsproxy);
             delete nobj;
-        
-        jsb_remove_proxy(nproxy, jsproxy);
+        }
+        else jsb_remove_proxy(nullptr, jsproxy);
     }
 }
 void js_register_jsb_socketLogic_SocketLogic(JSContext *cx, JS::HandleObject global) {

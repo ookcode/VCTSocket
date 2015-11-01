@@ -127,8 +127,8 @@ bool js_jsb_package_Package_pushCHAR(JSContext *cx, uint32_t argc, jsval *vp)
     VCT::Package* cobj = (VCT::Package *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_package_Package_pushCHAR : Invalid Native Object");
     if (argc == 2) {
-        const char* arg0;
-        int arg1;
+        const char* arg0 = nullptr;
+        int arg1 = 0;
         std::string arg0_tmp; ok &= jsval_to_std_string(cx, args.get(0), &arg0_tmp); arg0 = arg0_tmp.c_str();
         ok &= jsval_to_int32(cx, args.get(1), (int32_t *)&arg1);
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_package_Package_pushCHAR : Error processing arguments");
@@ -167,7 +167,7 @@ bool js_jsb_package_Package_pushUINT(JSContext *cx, uint32_t argc, jsval *vp)
     VCT::Package* cobj = (VCT::Package *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_package_Package_pushUINT : Invalid Native Object");
     if (argc == 1) {
-        unsigned int arg0;
+        unsigned int arg0 = 0;
         ok &= jsval_to_uint32(cx, args.get(0), &arg0);
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_package_Package_pushUINT : Error processing arguments");
         cobj->pushUINT(arg0);
@@ -259,7 +259,7 @@ bool js_jsb_package_Package_pushINT(JSContext *cx, uint32_t argc, jsval *vp)
     VCT::Package* cobj = (VCT::Package *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_package_Package_pushINT : Invalid Native Object");
     if (argc == 1) {
-        int arg0;
+        int arg0 = 0;
         ok &= jsval_to_int32(cx, args.get(0), (int32_t *)&arg0);
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_package_Package_pushINT : Error processing arguments");
         cobj->pushINT(arg0);
@@ -279,7 +279,7 @@ bool js_jsb_package_Package_popCHAR(JSContext *cx, uint32_t argc, jsval *vp)
     VCT::Package* cobj = (VCT::Package *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_package_Package_popCHAR : Invalid Native Object");
     if (argc == 1) {
-        int arg0;
+        int arg0 = 0;
         ok &= jsval_to_int32(cx, args.get(0), (int32_t *)&arg0);
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_package_Package_popCHAR : Error processing arguments");
         char* ret = cobj->popCHAR(arg0);
@@ -301,7 +301,7 @@ bool js_jsb_package_Package_pushULLONG(JSContext *cx, uint32_t argc, jsval *vp)
     VCT::Package* cobj = (VCT::Package *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_package_Package_pushULLONG : Invalid Native Object");
     if (argc == 1) {
-        unsigned long long arg0;
+        unsigned long long arg0 = 0;
         #pragma warning NO CONVERSION TO NATIVE FOR unsigned long long
 		ok = false;
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_package_Package_pushULLONG : Error processing arguments");
@@ -358,7 +358,7 @@ bool js_jsb_package_Package_pushLLONG(JSContext *cx, uint32_t argc, jsval *vp)
     VCT::Package* cobj = (VCT::Package *)(proxy ? proxy->ptr : NULL);
     JSB_PRECONDITION2( cobj, cx, false, "js_jsb_package_Package_pushLLONG : Invalid Native Object");
     if (argc == 1) {
-        long long arg0;
+        long long arg0 = 0;
         ok &= jsval_to_long_long(cx, args.get(0), &arg0);
         JSB_PRECONDITION2(ok, cx, false, "js_jsb_package_Package_pushLLONG : Error processing arguments");
         cobj->pushLLONG(arg0);
@@ -428,10 +428,10 @@ bool js_jsb_package_Package_create(JSContext *cx, uint32_t argc, jsval *vp)
     JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
     bool ok = true;
     if (argc == 4) {
-        unsigned int arg0;
-        unsigned int arg1;
-        unsigned int arg2;
-        int arg3;
+        unsigned int arg0 = 0;
+        unsigned int arg1 = 0;
+        unsigned int arg2 = 0;
+        int arg3 = 0;
         ok &= jsval_to_uint32(cx, args.get(0), &arg0);
         ok &= jsval_to_uint32(cx, args.get(1), &arg1);
         ok &= jsval_to_uint32(cx, args.get(2), &arg2);
@@ -466,7 +466,6 @@ bool js_jsb_package_Package_constructor(JSContext *cx, uint32_t argc, jsval *vp)
     CCASSERT(typeMapIter != _js_global_type_map.end(), "Can't find the class type!");
     typeClass = typeMapIter->second;
     CCASSERT(typeClass, "The value is null.");
-    // JSObject *obj = JS_NewObject(cx, typeClass->jsclass, typeClass->proto, typeClass->parentProto);
     JS::RootedObject proto(cx, typeClass->proto.get());
     JS::RootedObject parent(cx, typeClass->parentProto.get());
     JS::RootedObject obj(cx, JS_NewObject(cx, typeClass->jsclass, proto, parent));
@@ -484,13 +483,14 @@ void js_VCT_Package_finalize(JSFreeOp *fop, JSObject *obj) {
     js_proxy_t* jsproxy;
     jsproxy = jsb_get_js_proxy(obj);
     if (jsproxy) {
+        VCT::Package *nobj = static_cast<VCT::Package *>(jsproxy->ptr);
         nproxy = jsb_get_native_proxy(jsproxy->ptr);
 
-        VCT::Package *nobj = static_cast<VCT::Package *>(nproxy->ptr);
-        if (nobj)
+        if (nobj) {
+            jsb_remove_proxy(nproxy, jsproxy);
             delete nobj;
-        
-        jsb_remove_proxy(nproxy, jsproxy);
+        }
+        else jsb_remove_proxy(nullptr, jsproxy);
     }
 }
 void js_register_jsb_package_Package(JSContext *cx, JS::HandleObject global) {
