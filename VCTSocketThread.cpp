@@ -31,6 +31,13 @@ namespace VCT {
     
     SocketThread::~SocketThread() {
         close();
+        //清空消息队列
+        auto iter = _packageDeque.begin();
+        while (iter != _packageDeque.end()) {
+            Package *pack = *iter;
+            DELETE(pack);
+            _packageDeque.erase(iter);
+        }
     }
     
     void SocketThread::openWithIp(const char* ip, int port) {
@@ -181,14 +188,6 @@ namespace VCT {
         
         SCHEDULE()->unschedule(DispatchThreadKey, this);
         SCHEDULE()->unschedule(HeartBeatThreadKey, this);
-        
-        //清空消息队列
-        auto iter = _packageDeque.begin();
-        while (iter != _packageDeque.end()) {
-            Package *pack = *iter;
-            DELETE(pack);
-            _packageDeque.erase(iter);
-        }
     }
     
 }

@@ -26,6 +26,8 @@ namespace VCT {
         
         static SocketLogic* getInstance();
         
+        SocketLogic();
+        
         //连接指定IP
         void openWithIp(const char* ip,int port);
         

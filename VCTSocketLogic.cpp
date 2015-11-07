@@ -16,14 +16,16 @@ namespace VCT {
         return instance;
     }
     
-    void SocketLogic::openWithIp(const char* ip,int port) {
-        DELETE(_thread);
+    SocketLogic::SocketLogic() {
         _thread = SocketThread::create(this);
+    }
+    
+    void SocketLogic::openWithIp(const char* ip,int port) {
         _thread->openWithIp(ip, port);
     }
     
     void SocketLogic::close() {
-        DELETE(_thread);
+        _thread->close();
     }
     
     void SocketLogic::sendPackage(Package *package) {
@@ -58,6 +60,18 @@ namespace VCT {
     void SocketLogic::recvPackage(Package *package) {
         UINT mainID = package->getMainID();
         UINT assID = package->getAssID();
+        if (mainID == MAIN_NET_BASE)
+        {
+            switch (assID) {
+                case ass_net_error:
+                case ass_net_timeout:
+                case ass_server_close:
+                    close();
+                    break;
+                default:
+                    break;
+            }
+        }
         char ckey[16] = {0};
         sprintf(ckey, "%d_%d",mainID,assID);
         //遍历观察者，执行回调，若回调返回true，停止继续下发
